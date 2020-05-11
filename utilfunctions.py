@@ -1,5 +1,10 @@
-from utilclasses import *
+import os
+import re
 
+import numpy as np
+import torch
+import torch.nn as nn
+from .utilclasses import BatchGenerator
 
 def setup_environment(args):
     if not os.path.exists(args.save_dir):
@@ -96,8 +101,8 @@ def set_seed_everywhere(seed, cuda):
         torch.cuda.manual_seed_all(seed)
 
 
-def predict_category(text, Field_TEXT, Field_LABEL, classifier):
-    preprocessed_sample = [Field_TEXT.preprocess(sample)]
+def predict_category(text, args, Field_TEXT, Field_LABEL, classifier):
+    preprocessed_sample = [Field_TEXT.preprocess(text)]
     processed_sample = Field_TEXT.process(preprocessed_sample).to(args.device)
     y_pred = classifier(processed_sample)
     y_pred_np = y_pred.to(torch.device("cpu")).detach().numpy()
