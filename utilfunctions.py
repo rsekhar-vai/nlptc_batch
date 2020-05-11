@@ -1,18 +1,4 @@
-import json
-import numpy as np
-import os
-import pandas as pd
-import re
-import string
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from argparse import Namespace
-from collections import Counter
-from torch.utils.data import Dataset, DataLoader
-
-from .utilclasses import *
+from utilclasses import *
 
 
 def setup_environment(args):
@@ -119,14 +105,13 @@ def predict_category(text, Field_TEXT, Field_LABEL, classifier):
     return Field_LABEL.vocab.itos[np.argmax(y_pred_np)]
 
 
-def build_model(args, dataset, classifier, Batches_train, Batches_val, Batches_test, loss_func, optimizer, scheduler):
+def build_model(args, dataset, classifier, tokenizer, vectorizer, loss_func, optimizer, scheduler):
     train_state = make_train_state(args)
 
     try:
         for epoch_index in range(args.num_epochs):
             train_state['epoch_index'] = epoch_index
             print("--------------------- @epoch ", epoch_index, "---------------------")
-            dataset.set_split('train')
             running_loss = 0.0
             running_acc = 0.0
             classifier.train()
@@ -146,8 +131,6 @@ def build_model(args, dataset, classifier, Batches_train, Batches_val, Batches_t
             train_state['train_loss'].append(running_loss)
             train_state['train_acc'].append(running_acc)
             print('  training loss/accuracy {:.5f} / {:.2f}'.format(running_loss, running_acc))
-
-            dataset.set_split('val')
 
             batches = BatchGenerator(Batches_val, 'text', 'category')
             running_loss = 0.
@@ -185,7 +168,6 @@ def build_model(args, dataset, classifier, Batches_train, Batches_val, Batches_t
     classifier.load_state_dict(torch.load(train_state['model_filename']))
     classifier = classifier.to(args.device)
     loss_func = nn.CrossEntropyLoss()
-    dataset.set_split('test')
     batches = BatchGenerator(Batches_test, 'text', 'category')
     running_loss = 0.
     running_acc = 0.

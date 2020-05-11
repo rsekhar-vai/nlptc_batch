@@ -1,46 +1,19 @@
-import json
-import numpy as np
-import os
-import pandas as pd
-import re
-import string
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from argparse import Namespace
-from collections import Counter
-from sklearn.model_selection import train_test_split
-from torch.utils.data import Dataset, DataLoader
-from tqdm import tqdm_notebook
+from utilfunctions import *
 
 
 class TextDataset(Dataset):
     def __init__(self, text_df, args):
-        self.text_df = text_df
+        self.full = text_df
         self._max_seq_length = args.max_text_length
-        train_df, self.test_df = train_test_split(text_df)
-        self.train_df, self.val_df = train_test_split(train_df)
+        train_temp, self.test = train_test_split(text_df)
+        self.train, self.validation = train_test_split(train_temp)
 
-        self.train_size = len(self.train_df)
-        self.validation_size = len(self.val_df)
-        self.test_size = len(self.test_df)
-
-        self._lookup_dict = {'train': (self.train_df, self.train_size),
-                             'val': (self.val_df, self.validation_size),
-                             'test': (self.test_df, self.test_size)}
-
-        self.set_split('train')
+        self.train_size = len(self.train)
+        self.validation_size = len(self.validation)
+        self.test_size = len(self.test)
 
     def get_splits(self):
-        return self.train_df, self.val_df, self.text_df
-
-    def set_split(self, split="train"):
-        self._target_split = split
-        self._target_df, self._target_size = self._lookup_dict[split]
-
-    def __len__(self):
-        return self._target_size
+        return self.train, self.validation, self.test
 
 
 class BatchGenerator:
@@ -55,3 +28,31 @@ class BatchGenerator:
             X = getattr(batch, self.x_field)
             y = getattr(batch, self.y_field)
             yield (X, y)
+
+
+class Tokenizer:
+    def __init__(self, token_type='w'):
+        if token_type == 'c':
+            self.tokenizer = Tokenizer.char_tokenizer
+        else:
+            self.tokenizer = Tokenizer.word_tokenizer()
+
+    @staticmethod
+    def word_tokenizer():
+        nlp = spacy.load('en_core_web_sm', disable=["tagger", "parser", "ner"])
+
+        def tokenizer(sentence):
+            tokens = [w.text.lower() for w in nlp(Tokenizer.clean_sentence(sentence))]
+            return tokens
+
+        return tokenizer
+
+    @staticmethod
+    def char_tokenizer(sentence):
+        tokens = [w.lower() for w in Tokenizer.clean_sentence(sentence)]
+        return tokens
+
+    @staticmethod
+    def clean_sentence(text):
+        text = re.sub(r'[^A-Za-z0-9]+', ' ', text)  # remove non alphanumeric character
+        return text.strip()
