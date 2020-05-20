@@ -6,28 +6,29 @@ import spacy
 
 
 class TextDataset(Dataset):
-    def __init__(self, args):        
-			text_df_orig = pd.read_csv(args.text_csv, encoding='unicode_escape')
-			f text_column != 'text':
-				text_df_orig.rename(columns={args.text_column: 'text'}, inplace=True)
-			if label_column != 'category':
-					text_df_orig.rename(columns={args.label_column: 'category'}, inplace=True)
-			self.full = text_df_orig[['text', 'category']]
+    def __init__(self, args):
+        
+				text_df_orig = pd.read_csv(args.text_csv, encoding='unicode_escape')
+				if text_column != 'text':
+						text_df_orig.rename(columns={args.text_column: 'text'}, inplace=True)
+				if label_column != 'category':
+						text_df_orig.rename(columns={args.label_column: 'category'}, inplace=True)
+				self.full = text_df_orig[['text', 'category']]
 
-			self._max_seq_length = args.max_text_length
-			train_temp, self.test = train_test_split(self.full)
-			self.train, self.validation = train_test_split(train_temp)
+        self._max_seq_length = args.max_text_length
+        train_temp, self.test = train_test_split(self.full)
+        self.train, self.validation = train_test_split(train_temp)
 
-			self.train_size = len(self.train)
-			self.validation_size = len(self.validation)
-			self.test_size = len(self.test)
+        self.train_size = len(self.train)
+        self.validation_size = len(self.validation)
+        self.test_size = len(self.test)
 
-			train_df.to_csv(args.train_csv, index=False)
-			val_df.to_csv(args.val_csv, index=False)
-			test_df.to_csv(args.test_csv, index=False)
+				train_df.to_csv(args.train_csv, index=False)
+				val_df.to_csv(args.val_csv, index=False)
+				test_df.to_csv(args.test_csv, index=False)
 
     def get_splits(self):
-			return self.train, self.validation, self.test
+        return self.train, self.validation, self.test
 
 
 class BatchGenerator:
