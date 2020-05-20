@@ -7,7 +7,6 @@ import spacy
 
 class TextDataset(Dataset):
     def __init__(self, args):
-        
 			text_df_orig = pd.read_csv(args.text_csv, encoding='unicode_escape')
 			if text_column != 'text':
 					text_df_orig.rename(columns={args.text_column: 'text'}, inplace=True)
