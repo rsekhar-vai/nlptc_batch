@@ -4,7 +4,9 @@ import re
 import numpy as np
 import torch
 import torch.nn as nn
-from .utilclasses import BatchGenerator
+
+from utilclasses import BatchGenerator
+
 
 def setup_environment(args):
     if not os.path.exists(args.save_dir):
@@ -110,7 +112,7 @@ def predict_category(text, args, Field_TEXT, Field_LABEL, classifier):
     return Field_LABEL.vocab.itos[np.argmax(y_pred_np)]
 
 
-def build_model(args, dataset, classifier, tokenizer, vectorizer, loss_func, optimizer, scheduler):
+def build_model(args, pp, classifier, loss_func, optimizer, scheduler):
     train_state = make_train_state(args)
 
     try:
@@ -120,7 +122,7 @@ def build_model(args, dataset, classifier, tokenizer, vectorizer, loss_func, opt
             running_loss = 0.0
             running_acc = 0.0
             classifier.train()
-            batches = BatchGenerator(Batches_train, 'text', 'category')
+            batches = BatchGenerator(args, pp.Dataset_train)
 
             for batch_index, batch_dict in enumerate(batches):
                 optimizer.zero_grad()
@@ -137,7 +139,7 @@ def build_model(args, dataset, classifier, tokenizer, vectorizer, loss_func, opt
             train_state['train_acc'].append(running_acc)
             print('  training loss/accuracy {:.5f} / {:.2f}'.format(running_loss, running_acc))
 
-            batches = BatchGenerator(Batches_val, 'text', 'category')
+            batches = BatchGenerator(args, pp.Dataset_val)
             running_loss = 0.
             running_acc = 0.
             classifier.eval()
@@ -173,7 +175,7 @@ def build_model(args, dataset, classifier, tokenizer, vectorizer, loss_func, opt
     classifier.load_state_dict(torch.load(train_state['model_filename']))
     classifier = classifier.to(args.device)
     loss_func = nn.CrossEntropyLoss()
-    batches = BatchGenerator(Batches_test, 'text', 'category')
+    batches = BatchGenerator(args, pp.Dataset_test)
     running_loss = 0.
     running_acc = 0.
     classifier.eval()
@@ -196,7 +198,6 @@ def build_model(args, dataset, classifier, tokenizer, vectorizer, loss_func, opt
     print("Test Accuracy: {:.2f}".format(running_acc))
 
     return train_state
-
 
 def clean_text(text):
     text = re.sub(r'[^A-Za-z0-9]+', ' ', text)  # remove non alphanumeric character
