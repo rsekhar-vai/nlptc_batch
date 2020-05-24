@@ -33,8 +33,8 @@ class TextDataset(Dataset):
 
 
 class Tokenizer:
-    def __init__(self, token_type='w'):
-        if token_type == 'c':
+    def __init__(self, args):
+        if args.token_type == 'c':
             self.tokenizer = Tokenizer.char_tokenizer
         else:
             self.tokenizer = Tokenizer.word_tokenizer()

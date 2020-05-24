@@ -32,8 +32,10 @@ if __name__ == '__main__':
         max_text_length=256,
         pretrained_embeddings='Glove',
         embedding_size=100,
-        build_simple_cnn=True,
-        build_vdcnn=False
+        build_simple_char_cnn=False,
+        build_simple_word_cnn=False,
+        build_vdcnn=False,
+        build_convrec_bilstm=True,
     )
     setup_environment(args)
 
@@ -42,13 +44,37 @@ if __name__ == '__main__':
     args.text_csv = "data/bbcheadlines_text.csv"
     dataset = TextDataset(args)
 
-    if args.build_simple_cnn:
-        print("=================== Build Simple Word CNN ===================")
+    if args.build_simple_char_cnn:
+        print("=================== Build Simple Char CNN ===================")
+        args.token_type = 'c'
+        args.max_text_length = 256
+        args.tokenizer = Tokenizer(args).tokenizer
+        args.word_vectors = []
+        pp = PreProcessor(args)
+        classifier = SimpleCNN(embedding_size=args.embedding_size,
+                               num_embeddings=pp.get_text_vocab_length(),
+                               num_channels=args.num_channels,
+                               hidden_dim=args.hidden_dim,
+                               num_classes=pp.get_label_vocab_length(),
+                               dropout_p=args.dropout_p,
+                               pretrained_embeddings=pp.get_embeddings(),
+                               padding_idx=0)
+        classifier = classifier.to(args.device)
+        loss_func = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(classifier.parameters(), lr=args.learning_rate)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer,
+                                                         mode='min', factor=0.5,
+                                                         patience=1)
+        print("------- # of Parameters ---->: ", sum(p.numel() for p in classifier.parameters() if p.requires_grad))
+        results = build_model(args, pp, classifier, loss_func, optimizer, scheduler)
+        print(results)
+
+    if args.build_simple_word_cnn:
+        print("=================== Build Simple Char CNN ===================")
         args.token_type = 'w'
         args.max_text_length = 256
-        args.tokenizer = Tokenizer(args.token_type).tokenizer
+        args.tokenizer = Tokenizer(args).tokenizer
         args.word_vectors = vocab.Vectors('glove.6B.100d.txt', args.glove_filepath)
-        # args.word_vectors = []
         pp = PreProcessor(args)
         classifier = SimpleCNN(embedding_size=args.embedding_size,
                                num_embeddings=pp.get_text_vocab_length(),
@@ -70,10 +96,10 @@ if __name__ == '__main__':
 
     if args.build_vdcnn:
         print("======================== Build Very Deep CNN ================================")
-        args.token_type = 'w'
-        args.max_text_length = 128
-        args.tokenizer = Tokenizer(args.token_type).tokenizer
-        args.word_vectors = vocab.Vectors('glove.6B.100d.txt', args.glove_filepath)
+        args.token_type = 'c'
+        args.max_text_length = 256
+        args.tokenizer = Tokenizer(args).tokenizer
+        args.word_vectors = []
         pp = PreProcessor(args)
         classifier = VDCNN(num_classes=pp.get_label_vocab_length(),
                            embedding_dim=args.embedding_size,
@@ -85,5 +111,34 @@ if __name__ == '__main__':
                                                          mode='min', factor=0.5,
                                                          patience=1)
         print("------- # of Parameters ---->: ", sum(p.numel() for p in classifier.parameters() if p.requires_grad))
+        results = build_model(args, pp, classifier, loss_func, optimizer, scheduler)
+        print(results)
+
+    if args.build_convrec_bilstm:
+        print("======================== Build CNN + RNN/BiLSTM ================================")
+        args.max_text_length = 256
+        args.token_type = 'w'
+        args.num_channels = 256
+        args.tokenizer = Tokenizer(args).tokenizer
+        # args.word_vectors = []
+        args.word_vectors = vocab.Vectors('glove.6B.100d.txt', args.glove_filepath)
+        pp = PreProcessor(args)
+        classifier = ConvRec_BiLSTM(text_length=args.max_text_length,
+                                    embedding_size=args.embedding_size,
+                                    num_embeddings=pp.get_text_vocab_length(),
+                                    num_channels=args.num_channels,
+                                    hidden_dim=args.hidden_dim,
+                                    num_classes=pp.get_label_vocab_length(),
+                                    dropout_p=args.dropout_p,
+                                    pretrained_embeddings=pp.get_embeddings(),
+                                    padding_idx=0)
+        classifier = classifier.to(args.device)
+        loss_func = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(classifier.parameters(), lr=args.learning_rate)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer,
+                                                         mode='min', factor=0.5,
+                                                         patience=1)
+        print("------- # of Parameters ---->: ", sum(p.numel() for p in classifier.parameters() if p.requires_grad))
+
         results = build_model(args, pp, classifier, loss_func, optimizer, scheduler)
         print(results)

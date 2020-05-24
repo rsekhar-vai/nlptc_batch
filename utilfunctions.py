@@ -143,15 +143,11 @@ def build_model(args, pp, classifier, loss_func, optimizer, scheduler):
             running_loss = 0.
             running_acc = 0.
             classifier.eval()
-
             for batch_index, batch_dict in enumerate(batches):
-                optimizer.zero_grad()
                 y_pred = classifier(batch_dict[0])
                 loss = loss_func(y_pred, batch_dict[1])
                 loss_t = loss.item()
                 running_loss += (loss_t - running_loss) / (batch_index + 1)
-                loss.backward()
-                optimizer.step()
                 acc_t = compute_accuracy(y_pred, batch_dict[1])
                 running_acc += (acc_t - running_acc) / (batch_index + 1)
 
@@ -181,13 +177,10 @@ def build_model(args, pp, classifier, loss_func, optimizer, scheduler):
     classifier.eval()
 
     for batch_index, batch_dict in enumerate(batches):
-        optimizer.zero_grad()
         y_pred = classifier(batch_dict[0])
         loss = loss_func(y_pred, batch_dict[1])
         loss_t = loss.item()
         running_loss += (loss_t - running_loss) / (batch_index + 1)
-        loss.backward()
-        optimizer.step()
         acc_t = compute_accuracy(y_pred, batch_dict[1])
         running_acc += (acc_t - running_acc) / (batch_index + 1)
 
