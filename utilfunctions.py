@@ -1,6 +1,7 @@
 import os
 import re
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -192,6 +193,23 @@ def build_model(args, pp, classifier, loss_func, optimizer, scheduler):
 
     return train_state
 
+
 def clean_text(text):
     text = re.sub(r'[^A-Za-z0-9]+', ' ', text)  # remove non alphanumeric character
     return text.strip()
+
+
+def plot_results(results):
+    plt.plot(results['train_loss'])
+    plt.plot(results['val_loss'])
+    plt.plot((0, 20), (results['test_loss'], results['test_loss']))
+    plt.legend(['training loss', 'validation loss', 'test loss'])
+    plt.show()
+
+    plt.plot(results['train_acc'])
+    plt.plot(results['val_acc'])
+    plt.plot((0, 20), (results['test_acc'], results['test_acc']))
+    plt.legend(['training accuracy', 'validation accuracy', 'test Accuracy'])
+    plt.show()
+
+    return
