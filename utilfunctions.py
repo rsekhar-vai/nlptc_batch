@@ -104,13 +104,13 @@ def set_seed_everywhere(seed, cuda):
         torch.cuda.manual_seed_all(seed)
 
 
-def predict_category(text, args, Field_TEXT, Field_LABEL, classifier):
-    preprocessed_sample = [Field_TEXT.preprocess(text)]
-    processed_sample = Field_TEXT.process(preprocessed_sample).to(args.device)
+def predict_category(text, args, pp, classifier):
+    preprocessed_sample = [pp.Field_TEXT.preprocess(text)]
+    processed_sample = pp.Field_TEXT.process(preprocessed_sample).to(args.device)
     y_pred = classifier(processed_sample)
     y_pred_np = y_pred.to(torch.device("cpu")).detach().numpy()
 
-    return Field_LABEL.vocab.itos[np.argmax(y_pred_np)]
+    return pp.Field_LABEL.vocab.itos[np.argmax(y_pred_np)]
 
 
 def build_model(args, pp, classifier, loss_func, optimizer, scheduler):
